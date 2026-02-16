@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MineChan</title>
+
+<style>
+body{
+background:linear-gradient(90deg,#001a00,#003300,#001a00);
+color:#aaffaa;
+font-family:Courier New;
+margin:0;
+}
+
+.sidebar{
+position:fixed;
+width:260px;
+height:100%;
+background:#002200;
+padding:15px;
+}
+
+.logo{
+font-size:32px;
+color:#66ff66;
+}
+
+.main{
+margin-left:280px;
+padding:20px;
+}
+
+.thread{
+background:#002b00;
+border:1px solid #00aa00;
+padding:10px;
+margin-bottom:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+<div class="logo">MineChan</div>
+Minecraft players' board
+</div>
+
+<div class="main">
+
+<input id="title" placeholder="Title"><br><br>
+<textarea id="content" placeholder="Message"></textarea><br>
+<button onclick="postThread()">Post</button>
+
+<h2>Threads</h2>
+<div id="threads"></div>
+
+</div>
+
+<script>
+
+const USER = "YOUR_USERNAME";
+const REPO = "YOUR_REPO";
+const FILE = "threads.json";
+const TOKEN = "YOUR_TOKEN";
+
+const API = `https://api.github.com/repos/${USER}/${REPO}/contents/${FILE}`;
+
+let sha = "";
+
+// Load threads
+async function loadThreads(){
+
+let res = await fetch(API,{
+headers:{
+Authorization:`token ${TOKEN}`
+}
+});
+
+let data = await res.json();
+
+sha = data.sha;
+
+let content = JSON.parse(atob(data.content));
+
+displayThreads(content);
+}
+
+function displayThreads(list){
+
+let container = document.getElementById("threads");
+container.innerHTML="";
+
+list.reverse().forEach(thread=>{
+
+let div=document.createElement("div");
+div.className="thread";
+
+div.innerHTML=`
+<b>${thread.title}</b><br>
+${thread.content}<br>
+<small>${thread.time}</small>
+`;
+
+container.appendChild(div);
+
+});
+}
+
+// Post thread
+async function postThread(){
+
+let title=document.getElementById("title").value;
+let content=document.getElementById("content").value;
+
+let res=await fetch(API,{
+headers:{Authorization:`token ${TOKEN}`}
+});
+
+let data=await res.json();
+
+let threads=JSON.parse(atob(data.content));
+
+threads.push({
+title:title,
+content:content,
+time:new Date().toLocaleString()
+});
+
+let updated=btoa(JSON.stringify(threads,null,2));
+
+await fetch(API,{
+method:"PUT",
+headers:{
+Authorization:`token ${TOKEN}`,
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+message:"New thread",
+content:updated,
+sha:data.sha
+})
+});
+
+loadThreads();
+
+}
+
+loadThreads();
+
+</script>
+
+</body>
+</html>
