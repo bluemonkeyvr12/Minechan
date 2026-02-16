@@ -1,0 +1,28 @@
+name: Save Thread
+
+on:
+  workflow_dispatch:
+    inputs:
+      data:
+        required: true
+
+jobs:
+  save:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Save thread
+      run: |
+        echo '${{ github.event.inputs.data }}' > threads.json
+
+    - name: Commit
+      run: |
+        git config user.name "MineChan"
+        git config user.email "minechan@bot.com"
+        git add threads.json
+        git commit -m "New thread"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
